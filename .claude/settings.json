@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx vitest run __tests__/postgresql-acceptance.test.ts)",
+      "Bash(DATABASE_URL=\"postgresql://helpnavi:helpnavi@localhost:5432/helpnavi\" pnpm db:migrate:dev -- --name add_conversation_and_message_models)",
+      "Bash(DATABASE_URL=\"postgresql://helpnavi:helpnavi@localhost:5432/helpnavi\" npx prisma migrate dev --name add_conversation_and_message_models)",
+      "Bash(PGPASSWORD=helpnavi psql -h localhost -p 5432 -U helpnavi -d helpnavi -c \"SELECT pg_terminate_backend\\(pid\\) FROM pg_stat_activity WHERE datname = ''helpnavi'' AND pid <> pg_backend_pid\\(\\);\")",
+      "Bash(DATABASE_URL=\"postgresql://helpnavi:helpnavi@localhost:5432/helpnavi\" pnpm vitest run __tests__/chat-schema.test.ts)",
+      "Bash(npx vitest run src/features/chat/components/chat-sidebar.test.tsx src/features/chat/components/message-list.test.tsx)",
+      "Bash(npx vitest run src/features/chat/components/)",
+      "Bash(pnpm run dev)",
+      "Bash(curl -s http://localhost:3000)",
+      "mcp__chrome-devtools__list_pages",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "Bash(pkill -f \"chrome-devtools-mcp/chrome-profile\")",
+      "mcp__chrome-devtools__take_screenshot",
+      "mcp__chrome-devtools__type_text",
+      "mcp__chrome-devtools__evaluate_script",
+      "mcp__chrome-devtools__press_key"
+    ]
+  }
+}

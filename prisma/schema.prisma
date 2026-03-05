@@ -1,0 +1,34 @@
+// Prismaスキーマ定義
+// PostgreSQLデータベースへの接続設定とクライアント生成の構成
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// 会話セッション
+/// チャットの会話単位を管理する。メッセージを1対多で保持する。
+model Conversation {
+  id        String    @id @default(cuid())
+  title     String    @default("新しいチャット")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  messages  Message[]
+}
+
+/// チャットメッセージ
+/// 会話セッションに紐づく個別メッセージ。role は "user" または "assistant"。
+model Message {
+  id             String       @id @default(cuid())
+  role           String       // "user" | "assistant"
+  content        String
+  createdAt      DateTime     @default(now())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+}
