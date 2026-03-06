@@ -148,7 +148,7 @@ export async function POST(req: Request) {
     // handleChatStreamでMastraエージェントのストリーミングを処理
     const stream = await handleChatStream({
       mastra,
-      agentId: "sample-agent",
+      agentId: "chat-agent",
       params: body,
     });
 

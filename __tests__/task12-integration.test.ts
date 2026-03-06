@@ -25,7 +25,7 @@ describe("タスク12: 統合動作確認", () => {
         "src/components/chat.tsx",
         "src/components/agent-action.tsx",
         "src/mastra/index.ts",
-        "src/mastra/agents/sample-agent.ts",
+        "src/mastra/agents/chat-agent.ts",
         "src/mastra/tools/s3.ts",
         "src/lib/env-validation.ts",
       ];
@@ -211,13 +211,13 @@ describe("タスク12: 統合動作確認", () => {
         "utf-8"
       );
       expect(mastraContent).toContain("agents:");
-      expect(mastraContent).toContain("sample-agent");
-      expect(mastraContent).toContain("sampleAgent");
+      expect(mastraContent).toContain("chat-agent");
+      expect(mastraContent).toContain("chatAgent");
     });
 
     it("エージェントにS3ツールが統合されていること", () => {
       const agentContent = fs.readFileSync(
-        path.join(ROOT, "src/mastra/agents/sample-agent.ts"),
+        path.join(ROOT, "src/mastra/agents/chat-agent.ts"),
         "utf-8"
       );
       expect(agentContent).toContain("tools");
@@ -232,7 +232,7 @@ describe("タスク12: 統合動作確認", () => {
         "utf-8"
       );
       expect(content).toContain("mastra");
-      expect(content).toContain("sample-agent");
+      expect(content).toContain("chat-agent");
     });
 
     it("Server Actionがmastraインスタンスを使用していること", () => {
@@ -241,7 +241,7 @@ describe("タスク12: 統合動作確認", () => {
         "utf-8"
       );
       expect(content).toContain("mastra");
-      expect(content).toContain("sample-agent");
+      expect(content).toContain("chat-agent");
     });
 
     it("チャットUIが/api/chatエンドポイントに接続していること", () => {

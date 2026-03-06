@@ -8,7 +8,7 @@
 import { Mastra } from "@mastra/core";
 
 import { validateEnv, logWarnings } from "@/lib/env-validation";
-import { sampleAgent } from "./agents/sample-agent";
+import { chatAgent } from "./agents/chat-agent";
 
 // サーバー起動時に環境変数を検証
 const envResult = validateEnv();
@@ -19,5 +19,5 @@ logWarnings(envResult);
  * エージェントとツールを統合管理する
  */
 export const mastra = new Mastra({
-  agents: { "sample-agent": sampleAgent },
+  agents: { "chat-agent": chatAgent },
 });

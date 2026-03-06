@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6" />
+      <stop offset="100%" stop-color="#8B5CF6" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)" />
+  <!-- コンパス/ナビゲーションのモチーフ -->
+  <circle cx="256" cy="256" r="140" stroke="white" stroke-width="16" fill="none" opacity="0.3" />
+  <circle cx="256" cy="256" r="100" stroke="white" stroke-width="8" fill="none" opacity="0.2" />
+  <!-- チャットバブル -->
+  <path d="M176 200 C176 178 194 160 216 160 L336 160 C358 160 376 178 376 200 L376 280 C376 302 358 320 336 320 L280 320 L240 356 L240 320 L216 320 C194 320 176 302 176 280 Z" fill="white" />
+  <!-- クエスチョンマーク（ヘルプ） -->
+  <text x="276" y="275" font-family="Arial, sans-serif" font-size="120" font-weight="bold" fill="#6D28D9" text-anchor="middle" dominant-baseline="middle">?</text>
+  <!-- ナビゲーション矢印 -->
+  <polygon points="256,116 272,148 240,148" fill="white" />
+  <polygon points="256,396 240,364 272,364" fill="white" opacity="0.6" />
+  <polygon points="116,256 148,240 148,272" fill="white" opacity="0.6" />
+  <polygon points="396,256 364,272 364,240" fill="white" opacity="0.6" />
+</svg>

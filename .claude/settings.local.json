@@ -68,7 +68,12 @@
       "Bash(kill 29884:*)",
       "Bash(curl:*)",
       "Bash(PGPASSWORD=helpnavi psql:*)",
-      "mcp__chrome-devtools__handle_dialog"
+      "mcp__chrome-devtools__handle_dialog",
+      "Bash(pnpm search:*)",
+      "Bash(npm search:*)",
+      "Bash(npm view:*)",
+      "Bash(npx tsc:*)",
+      "Bash(git add:*)"
     ]
   }
 }

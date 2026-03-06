@@ -109,9 +109,9 @@ describe("タスク6: S3ファイル操作ツールの定義", () => {
   });
 
   describe("エージェントへのS3ツール統合", () => {
-    it("src/mastra/agents/sample-agent.ts にS3ツールのインポートが含まれていること", () => {
+    it("src/mastra/agents/chat-agent.ts にS3ツールのインポートが含まれていること", () => {
       const content = fs.readFileSync(
-        path.join(ROOT, "src/mastra/agents/sample-agent.ts"),
+        path.join(ROOT, "src/mastra/agents/chat-agent.ts"),
         "utf-8"
       );
       expect(content).toContain("tools");
@@ -119,7 +119,7 @@ describe("タスク6: S3ファイル操作ツールの定義", () => {
 
     it("サンプルエージェントにtoolsプロパティが設定されていること", () => {
       const content = fs.readFileSync(
-        path.join(ROOT, "src/mastra/agents/sample-agent.ts"),
+        path.join(ROOT, "src/mastra/agents/chat-agent.ts"),
         "utf-8"
       );
       expect(content).toContain("tools:");

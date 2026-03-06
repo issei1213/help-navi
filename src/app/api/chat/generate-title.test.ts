@@ -130,13 +130,13 @@ describe("generateTitle", () => {
     expect(promptContent).toContain("30文字以内");
   });
 
-  it("sample-agentを使用してタイトルを生成する", async () => {
+  it("chat-agentを使用してタイトルを生成する", async () => {
     mockGenerate.mockResolvedValue({ text: "テストタイトル" });
     const mastraMock = await import("@/mastra");
 
     await generateTitle("テストメッセージ");
 
-    expect(mastraMock.mastra.getAgent).toHaveBeenCalledWith("sample-agent");
+    expect(mastraMock.mastra.getAgent).toHaveBeenCalledWith("chat-agent");
   });
 
   it("ユーザーメッセージが30文字以下の場合、フォールバック時にそのまま返却する", async () => {

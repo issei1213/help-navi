@@ -1,7 +1,7 @@
 /**
  * LLMを使用して会話タイトルを生成するモジュール
  *
- * Mastraエージェント（sample-agent）を通じてClaude APIを呼び出し、
+ * Mastraエージェント（chat-agent）を通じてClaude APIを呼び出し、
  * ユーザーメッセージの内容を30文字以内のタイトルに要約する。
  * 失敗時はユーザーメッセージの先頭30文字にフォールバック。
  */
@@ -17,13 +17,13 @@ export const TITLE_MAX_LENGTH = 30;
  * @returns 30文字以内の会話タイトル
  *
  * 処理フロー:
- * 1. Mastraエージェント（sample-agent）の `generate()` で非ストリーミング呼び出しを行う
+ * 1. Mastraエージェント（chat-agent）の `generate()` で非ストリーミング呼び出しを行う
  * 2. レスポンスをトリムし、30文字に切り詰める
  * 3. 空レスポンスまたはエラー時はユーザーメッセージの先頭30文字をフォールバックとして使用する
  */
 export async function generateTitle(userMessage: string): Promise<string> {
   try {
-    const agent = mastra.getAgent("sample-agent");
+    const agent = mastra.getAgent("chat-agent");
     const response = await agent.generate([
       {
         role: "user",

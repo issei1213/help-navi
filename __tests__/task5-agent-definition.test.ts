@@ -6,33 +6,33 @@ const ROOT = path.resolve(__dirname, "..");
 
 describe("タスク5: Claude API連携のサンプルエージェント定義", () => {
   describe("エージェント定義ファイル", () => {
-    it("src/mastra/agents/sample-agent.ts が存在すること", () => {
+    it("src/mastra/agents/chat-agent.ts が存在すること", () => {
       expect(
-        fs.existsSync(path.join(ROOT, "src/mastra/agents/sample-agent.ts"))
+        fs.existsSync(path.join(ROOT, "src/mastra/agents/chat-agent.ts"))
       ).toBe(true);
     });
 
     it("Agentクラスをインポートしていること", () => {
       const content = fs.readFileSync(
-        path.join(ROOT, "src/mastra/agents/sample-agent.ts"),
+        path.join(ROOT, "src/mastra/agents/chat-agent.ts"),
         "utf-8"
       );
       expect(content).toContain("Agent");
       expect(content).toContain("@mastra/core/agent");
     });
 
-    it("sampleAgent がエクスポートされていること", () => {
+    it("chatAgent がエクスポートされていること", () => {
       const content = fs.readFileSync(
-        path.join(ROOT, "src/mastra/agents/sample-agent.ts"),
+        path.join(ROOT, "src/mastra/agents/chat-agent.ts"),
         "utf-8"
       );
       expect(content).toContain("export");
-      expect(content).toContain("sampleAgent");
+      expect(content).toContain("chatAgent");
     });
 
     it("AnthropicモデルプロバイダーとしてClaudeが設定されていること", () => {
       const content = fs.readFileSync(
-        path.join(ROOT, "src/mastra/agents/sample-agent.ts"),
+        path.join(ROOT, "src/mastra/agents/chat-agent.ts"),
         "utf-8"
       );
       // Anthropicプロバイダーの設定を確認
@@ -42,7 +42,7 @@ describe("タスク5: Claude API連携のサンプルエージェント定義", 
 
     it("システムプロンプト（instructions）が設定されていること", () => {
       const content = fs.readFileSync(
-        path.join(ROOT, "src/mastra/agents/sample-agent.ts"),
+        path.join(ROOT, "src/mastra/agents/chat-agent.ts"),
         "utf-8"
       );
       expect(content).toContain("instructions");
@@ -50,7 +50,7 @@ describe("タスク5: Claude API連携のサンプルエージェント定義", 
 
     it("エージェント名が設定されていること", () => {
       const content = fs.readFileSync(
-        path.join(ROOT, "src/mastra/agents/sample-agent.ts"),
+        path.join(ROOT, "src/mastra/agents/chat-agent.ts"),
         "utf-8"
       );
       expect(content).toContain("name:");
@@ -58,12 +58,12 @@ describe("タスク5: Claude API連携のサンプルエージェント定義", 
   });
 
   describe("Mastraへのエージェント登録", () => {
-    it("src/mastra/index.ts でsampleAgentがインポートされていること", () => {
+    it("src/mastra/index.ts でchatAgentがインポートされていること", () => {
       const content = fs.readFileSync(
         path.join(ROOT, "src/mastra/index.ts"),
         "utf-8"
       );
-      expect(content).toContain("sampleAgent");
+      expect(content).toContain("chatAgent");
     });
 
     it("src/mastra/index.ts でagentsオブジェクトにエージェントが登録されていること", () => {
@@ -72,7 +72,7 @@ describe("タスク5: Claude API連携のサンプルエージェント定義", 
         "utf-8"
       );
       expect(content).toContain("agents:");
-      expect(content).toContain("sample-agent");
+      expect(content).toContain("chat-agent");
     });
   });
 });

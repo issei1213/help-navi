@@ -19,6 +19,7 @@
     "db:studio": "dotenv -e .env.local -- prisma studio"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.58",
     "@ai-sdk/react": "^3.0.105",
     "@aws-sdk/client-s3": "^3.999.0",
     "@mastra/ai-sdk": "^1.1.0",
