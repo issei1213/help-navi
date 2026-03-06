@@ -1,11 +1,26 @@
 /**
  * WelcomeScreen コンポーネント
  *
- * 会話が空の場合にウェルカムメッセージを表示する。
- * アプリ名とガイダンステキストを中央配置で表示する。
+ * 会話が空の場合にウェルカムメッセージとモデルセレクターを表示する。
+ * アプリ名とガイダンステキストを中央配置で表示し、その下にモデルセレクターを配置する。
  */
+import { ModelSelector } from "./model-selector";
 
-export function WelcomeScreen() {
+/** WelcomeScreen のプロパティ */
+interface WelcomeScreenProps {
+  /** 選択中のモデル ID */
+  selectedModelId: string;
+  /** モデル選択コールバック */
+  onModelSelect: (modelId: string) => void;
+  /** モデルセレクターの操作可否 */
+  disabled: boolean;
+}
+
+export function WelcomeScreen({
+  selectedModelId,
+  onModelSelect,
+  disabled,
+}: WelcomeScreenProps) {
   return (
     <div
       data-testid="welcome-screen"
@@ -29,10 +44,16 @@ export function WelcomeScreen() {
       <h2 className="text-xl font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
         Help Navi
       </h2>
-      <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-md">
+      <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-md mb-6">
         AIエージェントとの対話を始めましょう。
         なんでも気軽に質問してください。
       </p>
+      {/* モデルセレクター */}
+      <ModelSelector
+        selectedModelId={selectedModelId}
+        onModelSelect={onModelSelect}
+        disabled={disabled}
+      />
     </div>
   );
 }

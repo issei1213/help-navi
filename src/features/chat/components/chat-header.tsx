@@ -5,7 +5,9 @@
  * デスクトップではタイトルのみ中央表示。
  * モバイルでは左にハンバーガーアイコン + 新規チャットアイコンを配置。
  * サイドバーが折りたたまれている場合は展開ボタンを表示する。
+ * 使用中のモデル名をタイトル近傍に表示する。
  */
+import { getModelDisplayName } from "@/lib/models";
 
 /** ChatHeader のプロパティ */
 interface ChatHeaderProps {
@@ -21,6 +23,8 @@ interface ChatHeaderProps {
   onNewChat: () => void;
   /** サイドバーが折りたたまれているか（デスクトップ用） */
   sidebarCollapsed: boolean;
+  /** 使用中のモデル ID（null の場合はデフォルト表示） */
+  modelId: string | null;
 }
 
 export function ChatHeader({
@@ -30,6 +34,7 @@ export function ChatHeader({
   onToggleSidebar,
   onNewChat,
   sidebarCollapsed,
+  modelId,
 }: ChatHeaderProps) {
   return (
     <header className="flex items-center h-12 px-4 border-b border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 flex-shrink-0">
@@ -104,14 +109,22 @@ export function ChatHeader({
         )}
       </div>
 
-      {/* 中央: タイトル（生成中はスケルトン表示） */}
-      <h1 className="flex-1 text-center text-sm font-semibold text-zinc-800 dark:text-zinc-200 truncate">
-        {isGeneratingTitle ? (
-          <span className="mx-auto block h-4 w-48 rounded-md bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
-        ) : (
-          title
-        )}
-      </h1>
+      {/* 中央: タイトルとモデル名（生成中はスケルトン表示） */}
+      <div className="flex-1 text-center truncate">
+        <h1 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 truncate">
+          {isGeneratingTitle ? (
+            <span className="mx-auto block h-4 w-48 rounded-md bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
+          ) : (
+            title
+          )}
+        </h1>
+        <p
+          data-testid="model-name-display"
+          className="text-xs text-zinc-400 dark:text-zinc-500 truncate"
+        >
+          {getModelDisplayName(modelId)}
+        </p>
+      </div>
 
       {/* 右側: スペーサー（左側のボタン分の幅を確保してタイトルを中央に維持） */}
       <div className="flex items-center gap-2">

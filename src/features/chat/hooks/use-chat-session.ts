@@ -20,6 +20,8 @@ export interface UseChatSessionParams {
   conversationId: string | null;
   /** DB から取得した初期メッセージ */
   initialMessages: UIMessage[];
+  /** 使用するモデル ID */
+  modelId: string;
 }
 
 /** useChatSession の戻り値型 */
@@ -34,20 +36,26 @@ export interface UseChatSessionReturn {
   stop: () => void;
   /** 最後のAIメッセージを再生成 */
   regenerate: () => void;
+  /** エラーオブジェクト */
+  error: Error | undefined;
 }
 
 export function useChatSession({
   conversationId,
   initialMessages,
+  modelId,
 }: UseChatSessionParams): UseChatSessionReturn {
-  /** Transport の生成（conversationId に応じて body に含める） */
+  /** Transport の生成（conversationId と modelId を body に含める） */
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
         api: "/api/chat",
-        body: conversationId ? { conversationId } : undefined,
+        body: {
+          ...(conversationId ? { conversationId } : {}),
+          modelId,
+        },
       }),
-    [conversationId]
+    [conversationId, modelId]
   );
 
   const {
@@ -56,6 +64,7 @@ export function useChatSession({
     sendMessage: chatSendMessage,
     stop: chatStop,
     reload,
+    error,
   } = useChat({
     id: conversationId ?? undefined,
     transport,
@@ -87,5 +96,6 @@ export function useChatSession({
     sendMessage,
     stop,
     regenerate,
+    error,
   };
 }

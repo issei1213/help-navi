@@ -15,9 +15,11 @@
 import { NextResponse } from "next/server";
 import { handleChatStream } from "@mastra/ai-sdk";
 import { createUIMessageStreamResponse } from "ai";
+import { RequestContext } from "@mastra/core/di";
 import { mastra } from "@/mastra";
 import { prisma } from "@/infrastructure/prisma-client";
 import { generateTitle } from "./generate-title";
+import { isValidModelId, DEFAULT_MODEL_ID } from "@/lib/models";
 
 /**
  * ユーザーメッセージをDBに保存する
@@ -119,6 +121,18 @@ export async function POST(req: Request) {
     }
 
     const conversationId: string | undefined = body.conversationId;
+    const bodyModelId: string | undefined = body.modelId;
+
+    // modelIdのバリデーション: 指定されている場合は有効なIDかチェック
+    if (bodyModelId !== undefined && !isValidModelId(bodyModelId)) {
+      return NextResponse.json(
+        {
+          error:
+            "指定されたモデルは利用できません。別のモデルを選択してください。",
+        },
+        { status: 400 }
+      );
+    }
 
     // conversationId が指定されている場合、最後のユーザーメッセージをDBに保存
     if (conversationId) {
@@ -145,11 +159,49 @@ export async function POST(req: Request) {
       }
     }
 
+    // モデルIDの解決: body.modelId > conversation.modelId > DEFAULT_MODEL_ID
+    let resolvedModelId: string = bodyModelId ?? DEFAULT_MODEL_ID;
+    if (!bodyModelId && conversationId) {
+      try {
+        const conversation = await prisma.conversation.findUnique({
+          where: { id: conversationId },
+          select: { modelId: true },
+        });
+        if (conversation?.modelId) {
+          resolvedModelId = conversation.modelId;
+        }
+      } catch (error) {
+        console.error("会話モデルID取得エラー:", error);
+      }
+    }
+
+    // 初回メッセージ送信時に会話のmodelIdが未設定の場合は更新
+    if (conversationId) {
+      try {
+        const conv = await prisma.conversation.findUnique({
+          where: { id: conversationId },
+          select: { modelId: true },
+        });
+        if (conv && !conv.modelId) {
+          await prisma.conversation.update({
+            where: { id: conversationId },
+            data: { modelId: resolvedModelId },
+          });
+        }
+      } catch (error) {
+        console.error("会話モデルID更新エラー:", error);
+      }
+    }
+
+    // RequestContextを構築してmodelIdを設定
+    const requestContext = new RequestContext();
+    requestContext.set("modelId", resolvedModelId);
+
     // handleChatStreamでMastraエージェントのストリーミングを処理
     const stream = await handleChatStream({
       mastra,
       agentId: "chat-agent",
-      params: body,
+      params: { ...body, requestContext },
     });
 
     // SSE形式でストリーミングレスポンスを返却

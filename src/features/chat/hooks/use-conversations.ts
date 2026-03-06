@@ -14,6 +14,8 @@ export interface ConversationListItem {
   id: string;
   title: string;
   updatedAt: string;
+  /** 会話で使用するモデル ID（null = デフォルト） */
+  modelId: string | null;
 }
 
 /** APIから取得したメッセージ型 */
@@ -33,9 +35,9 @@ export interface UseConversationsReturn {
   /** ローディング状態 */
   isLoading: boolean;
   /** 新しい会話を作成し、IDを返す */
-  createConversation: () => Promise<string>;
-  /** 会話を選択し、メッセージを取得する */
-  selectConversation: (id: string) => Promise<void>;
+  createConversation: (modelId?: string) => Promise<string>;
+  /** 会話を選択し、メッセージを取得して modelId を返す */
+  selectConversation: (id: string) => Promise<string | null>;
   /** 会話タイトルを更新する */
   updateTitle: (id: string, title: string) => Promise<void>;
   /** 会話を削除する */
@@ -80,11 +82,13 @@ export function useConversations(): UseConversationsReturn {
   }, []);
 
   /** 新しい会話を作成し、IDを返す */
-  const createConversation = useCallback(async (): Promise<string> => {
+  const createConversation = useCallback(async (modelId?: string): Promise<string> => {
     const response = await fetch("/api/conversations", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({}),
+      body: JSON.stringify({
+        ...(modelId ? { modelId } : {}),
+      }),
     });
 
     if (!response.ok) {
@@ -96,6 +100,7 @@ export function useConversations(): UseConversationsReturn {
       id: newConversation.id,
       title: newConversation.title,
       updatedAt: newConversation.updatedAt,
+      modelId: newConversation.modelId ?? null,
     };
 
     // 新しい会話を一覧の先頭に追加
@@ -106,8 +111,8 @@ export function useConversations(): UseConversationsReturn {
     return newConversation.id;
   }, []);
 
-  /** 会話を選択し、メッセージを取得する */
-  const selectConversation = useCallback(async (id: string): Promise<void> => {
+  /** 会話を選択し、メッセージを取得して modelId を返す */
+  const selectConversation = useCallback(async (id: string): Promise<string | null> => {
     setActiveConversationId(id);
 
     try {
@@ -115,13 +120,23 @@ export function useConversations(): UseConversationsReturn {
       if (!response.ok) {
         throw new Error("メッセージの取得に失敗しました");
       }
-      const messages = await response.json();
-      setActiveMessages(messages);
+      const data = await response.json();
+      // レスポンスが { modelId, messages } 形式の場合と配列形式の場合に対応
+      if (Array.isArray(data)) {
+        setActiveMessages(data);
+        // 会話一覧から modelId を取得
+        const conv = conversations.find((c) => c.id === id);
+        return conv?.modelId ?? null;
+      } else {
+        setActiveMessages(data.messages ?? []);
+        return data.modelId ?? null;
+      }
     } catch (error) {
       console.error("メッセージ取得エラー:", error);
       setActiveMessages([]);
+      return null;
     }
-  }, []);
+  }, [conversations]);
 
   /** 会話タイトルを更新する */
   const updateTitle = useCallback(

@@ -7,7 +7,7 @@
  */
 "use client";
 
-import { useCallback, useRef, useEffect } from "react";
+import { useCallback, useRef, useEffect, useState } from "react";
 import { useConversations } from "../hooks/use-conversations";
 import { useChatSession } from "../hooks/use-chat-session";
 import { useSidebar } from "../hooks/use-sidebar";
@@ -17,8 +17,12 @@ import { ChatHeader } from "./chat-header";
 import { MessageList } from "./message-list";
 import { ChatInputArea } from "./chat-input-area";
 import type { UIMessage } from "@ai-sdk/react";
+import { DEFAULT_MODEL_ID } from "@/lib/models";
 
 export function ChatContainer() {
+  /** モデル選択の state 管理 */
+  const [selectedModelId, setSelectedModelId] = useState<string>(DEFAULT_MODEL_ID);
+
   /** 会話管理フック */
   const {
     conversations,
@@ -43,9 +47,10 @@ export function ChatContainer() {
   }));
 
   /** チャットセッション管理フック */
-  const { messages, status, sendMessage, stop, regenerate } = useChatSession({
+  const { messages, status, sendMessage, stop, regenerate, error } = useChatSession({
     conversationId: activeConversationId,
     initialMessages,
+    modelId: selectedModelId,
   });
 
   /** 現在の会話タイトルを取得する */
@@ -58,6 +63,7 @@ export function ChatContainer() {
 
   /** 新しいチャットを作成する */
   const handleNewChat = useCallback(async () => {
+    setSelectedModelId(DEFAULT_MODEL_ID);
     await createConversation();
     if (isMobile) {
       closeSidebar();
@@ -69,12 +75,12 @@ export function ChatContainer() {
     async (text: string) => {
       if (!activeConversationId) {
         pendingMessageRef.current = text;
-        await createConversation();
+        await createConversation(selectedModelId);
         return;
       }
       sendMessage(text);
     },
-    [activeConversationId, createConversation, sendMessage]
+    [activeConversationId, createConversation, sendMessage, selectedModelId]
   );
 
   /** 保留メッセージを会話作成後に送信する */
@@ -124,7 +130,8 @@ export function ChatContainer() {
   /** 会話を選択する */
   const handleSelectConversation = useCallback(
     async (id: string) => {
-      await selectConversation(id);
+      const modelId = await selectConversation(id);
+      setSelectedModelId(modelId ?? DEFAULT_MODEL_ID);
       if (isMobile) {
         closeSidebar();
       }
@@ -137,6 +144,14 @@ export function ChatContainer() {
     navigator.clipboard.writeText(content).catch(() => {
       // クリップボードAPI未対応環境のフォールバック
     });
+  }, []);
+
+  /** モデルセレクターの disabled 判定（メッセージが存在する場合は無効化） */
+  const isModelSelectorDisabled = messages.length > 0;
+
+  /** モデル選択ハンドラ */
+  const handleModelSelect = useCallback((modelId: string) => {
+    setSelectedModelId(modelId);
   }, []);
 
   /** ストリーミング中かどうか */
@@ -177,13 +192,28 @@ export function ChatContainer() {
             onToggleSidebar={toggleSidebar}
             onNewChat={handleNewChat}
             sidebarCollapsed={sidebarState === "collapsed"}
+            modelId={selectedModelId}
           />
           <MessageList
             messages={messages}
             isStreaming={isStreaming}
             onCopy={handleCopy}
             onRegenerate={regenerate}
+            selectedModelId={selectedModelId}
+            onModelSelect={handleModelSelect}
+            isModelSelectorDisabled={isModelSelectorDisabled}
           />
+          {/* エラーメッセージ表示 */}
+          {error && (
+            <div
+              data-testid="chat-error-message"
+              className="mx-4 mb-2 p-3 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800"
+            >
+              <p className="text-sm text-red-600 dark:text-red-400">
+                {error.message}
+              </p>
+            </div>
+          )}
           <ChatInputArea
             onSendMessage={handleSendMessage}
             onStop={stop}

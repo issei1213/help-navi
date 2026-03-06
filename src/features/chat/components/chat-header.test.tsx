@@ -20,6 +20,8 @@ describe("ChatHeader", () => {
     onToggleSidebar: vi.fn(),
     onNewChat: vi.fn(),
     sidebarCollapsed: false,
+    isGeneratingTitle: false,
+    modelId: null as string | null,
   };
 
   it("会話タイトルを表示する", () => {
@@ -75,6 +77,44 @@ describe("ChatHeader", () => {
       fireEvent.click(screen.getByTestId("mobile-new-chat-button"));
 
       expect(onNewChat).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("モデル名表示", () => {
+    it("modelId が指定されている場合、モデル表示名を表示する", () => {
+      render(
+        <ChatHeader
+          {...defaultProps}
+          modelId="claude-sonnet-4-20250514"
+        />
+      );
+
+      expect(screen.getByText("Claude Sonnet 4")).toBeDefined();
+    });
+
+    it("modelId が null の場合、デフォルトモデルの表示名を表示する", () => {
+      render(
+        <ChatHeader
+          {...defaultProps}
+          modelId={null}
+        />
+      );
+
+      // デフォルトモデルの表示名が表示される
+      expect(screen.getByText("Claude Sonnet 4")).toBeDefined();
+    });
+
+    it("modelId がセットされた場合、data-testid='model-name-display' で表示される", () => {
+      render(
+        <ChatHeader
+          {...defaultProps}
+          modelId="claude-opus-4-20250514"
+        />
+      );
+
+      const modelDisplay = screen.getByTestId("model-name-display");
+      expect(modelDisplay).toBeDefined();
+      expect(modelDisplay.textContent).toBe("Claude Opus 4");
     });
   });
 

@@ -85,9 +85,9 @@ pnpm db:studio         # GUIデータブラウザ
 - **環境変数バリデーションは警告方式**: 起動ブロックせず、未設定時はコンソール警告のみ
 - **MinIO + PostgreSQLをDocker Composeで管理**: MinIOは初期化コンテナでバケット自動作成、PostgreSQLはヘルスチェック付きで起動
 - **Prisma v6系の採用**: Prisma 7はESM必須のため、現行CJS構成との互換性を考慮しv6.19.xを選択
-- **AIモデルの指定**: Anthropic Claude (`claude-sonnet-4-20250514`) をエージェントレベルで設定
+- **AIモデルの動的選択**: Mastraの `requestContext` パターンを使用し、エージェントの `model` プロパティを関数形式で定義。会話ごとにユーザーが選択したモデルを動的に解決する（デフォルト: Claude Sonnet 4.6）。利用可能モデルは `src/lib/models.ts` で一元管理
 - **Streamdownの採用**: AI応答のMarkdownレンダリングに[Streamdown](https://streamdown.ai/)を選択。Vercel製のreact-markdown代替で、ストリーミング最適化（不完全なMarkdownの自動補完）、Shikiベースのシンタックスハイライト、コピーボタン・言語ラベル・デュアルテーマをビルトインで提供。CJK対応パッケージ（`@streamdown/cjk`）を併用
 
 ---
 _created_at: 2026-03-04_
-_updated_at: 2026-03-04 - Streamdown（Markdownレンダリング）を主要ライブラリに追記_
+_updated_at: 2026-03-07 - AIモデル選択をハードコードから動的requestContextパターンへ変更を反映_

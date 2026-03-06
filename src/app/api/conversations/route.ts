@@ -6,6 +6,7 @@
  */
 import { NextResponse } from "next/server";
 import { prisma } from "@/infrastructure/prisma-client";
+import { isValidModelId } from "@/lib/models";
 
 /**
  * 会話一覧を取得する
@@ -22,6 +23,7 @@ export async function GET() {
         id: true,
         title: true,
         updatedAt: true,
+        modelId: true,
       },
     });
 
@@ -55,9 +57,21 @@ export async function POST(req: Request) {
       }
     }
 
+    // modelId が指定されている場合のバリデーション
+    if (body.modelId !== undefined && !isValidModelId(body.modelId)) {
+      return NextResponse.json(
+        {
+          error:
+            "指定されたモデルは利用できません。別のモデルを選択してください。",
+        },
+        { status: 400 }
+      );
+    }
+
     const conversation = await prisma.conversation.create({
       data: {
         ...(body.title ? { title: body.title.trim() } : {}),
+        ...(body.modelId ? { modelId: body.modelId } : {}),
       },
     });
 

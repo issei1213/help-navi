@@ -26,6 +26,7 @@ erDiagram
     Conversation {
         string id PK "cuid() 自動生成"
         string title "デフォルト: 新しいチャット"
+        string modelId "nullable: 使用モデルID"
         datetime createdAt "自動設定"
         datetime updatedAt "自動更新"
     }
@@ -158,4 +159,4 @@ PostgreSQLはDocker Composeで管理し、既存のMinIOサービスと並列で
 
 ---
 _created_at: 2026-03-04_
-_updated_at: 2026-03-05 - ER図（mermaid形式）、リレーション詳細、インデックス情報を追記_
+_updated_at: 2026-03-07 - ConversationテーブルにmodelIdカラム（nullable）を追記_

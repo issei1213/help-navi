@@ -21,6 +21,12 @@ interface MessageListProps {
   onCopy: (content: string) => void;
   /** リトライコールバック */
   onRegenerate: () => void;
+  /** 選択中のモデル ID */
+  selectedModelId: string;
+  /** モデル選択コールバック */
+  onModelSelect: (modelId: string) => void;
+  /** モデルセレクター無効化フラグ */
+  isModelSelectorDisabled: boolean;
 }
 
 export function MessageList({
@@ -28,6 +34,9 @@ export function MessageList({
   isStreaming,
   onCopy,
   onRegenerate,
+  selectedModelId,
+  onModelSelect,
+  isModelSelectorDisabled,
 }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -42,7 +51,11 @@ export function MessageList({
   if (messages.length === 0 && !isStreaming) {
     return (
       <div className="flex-1 overflow-y-auto">
-        <WelcomeScreen />
+        <WelcomeScreen
+          selectedModelId={selectedModelId}
+          onModelSelect={onModelSelect}
+          disabled={isModelSelectorDisabled}
+        />
       </div>
     );
   }

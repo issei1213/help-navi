@@ -40,6 +40,13 @@ const mockMessages: UIMessage[] = [
   },
 ];
 
+/** MessageList テスト用のデフォルト props */
+const defaultMessageListProps = {
+  selectedModelId: "claude-sonnet-4-20250514",
+  onModelSelect: vi.fn(),
+  isModelSelectorDisabled: false,
+};
+
 describe("MessageList", () => {
   afterEach(() => {
     cleanup();
@@ -52,6 +59,7 @@ describe("MessageList", () => {
         isStreaming={false}
         onCopy={vi.fn()}
         onRegenerate={vi.fn()}
+        {...defaultMessageListProps}
       />
     );
 
@@ -68,6 +76,7 @@ describe("MessageList", () => {
         isStreaming={false}
         onCopy={vi.fn()}
         onRegenerate={vi.fn()}
+        {...defaultMessageListProps}
       />
     );
 
@@ -81,6 +90,7 @@ describe("MessageList", () => {
         isStreaming={false}
         onCopy={vi.fn()}
         onRegenerate={vi.fn()}
+        {...defaultMessageListProps}
       />
     );
 
@@ -273,6 +283,7 @@ describe("MessageList isStreaming伝播", () => {
         isStreaming={true}
         onCopy={vi.fn()}
         onRegenerate={vi.fn()}
+        {...defaultMessageListProps}
       />
     );
 
@@ -292,6 +303,7 @@ describe("MessageList isStreaming伝播", () => {
         isStreaming={false}
         onCopy={vi.fn()}
         onRegenerate={vi.fn()}
+        {...defaultMessageListProps}
       />
     );
 
@@ -308,6 +320,7 @@ describe("MessageList isStreaming伝播", () => {
         isStreaming={true}
         onCopy={vi.fn()}
         onRegenerate={vi.fn()}
+        {...defaultMessageListProps}
       />
     );
 
@@ -330,6 +343,7 @@ describe("MessageList isStreaming伝播", () => {
         isStreaming={true}
         onCopy={vi.fn()}
         onRegenerate={vi.fn()}
+        {...defaultMessageListProps}
       />
     );
 
@@ -338,22 +352,35 @@ describe("MessageList isStreaming伝播", () => {
   });
 });
 
+/** WelcomeScreen テスト用のデフォルト props */
+const defaultWelcomeScreenProps = {
+  selectedModelId: "claude-sonnet-4-20250514",
+  onModelSelect: vi.fn(),
+  disabled: false,
+};
+
 describe("WelcomeScreen", () => {
   afterEach(() => {
     cleanup();
   });
 
   it("ウェルカムメッセージを表示する", () => {
-    render(<WelcomeScreen />);
+    render(<WelcomeScreen {...defaultWelcomeScreenProps} />);
 
     expect(screen.getByTestId("welcome-screen")).toBeDefined();
   });
 
   it("アプリ名またはガイダンステキストを含む", () => {
-    render(<WelcomeScreen />);
+    render(<WelcomeScreen {...defaultWelcomeScreenProps} />);
 
     // ウェルカム画面にテキストが存在する
     const welcomeScreen = screen.getByTestId("welcome-screen");
     expect(welcomeScreen.textContent).toBeTruthy();
+  });
+
+  it("モデルセレクターが含まれる", () => {
+    render(<WelcomeScreen {...defaultWelcomeScreenProps} />);
+
+    expect(screen.getByTestId("model-selector")).toBeDefined();
   });
 });

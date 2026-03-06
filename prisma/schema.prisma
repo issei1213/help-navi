@@ -15,6 +15,7 @@ datasource db {
 model Conversation {
   id        String    @id @default(cuid())
   title     String    @default("新しいチャット")
+  modelId   String?   // 使用するAnthropicモデルID（null = デフォルトモデル）
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   messages  Message[]

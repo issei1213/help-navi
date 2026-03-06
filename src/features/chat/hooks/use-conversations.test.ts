@@ -20,8 +20,8 @@ function mockFetchResponse(data: unknown, status = 200) {
 
 /** テスト用の会話データ */
 const mockConversations = [
-  { id: "conv-1", title: "会話1", updatedAt: "2026-03-04T10:00:00Z" },
-  { id: "conv-2", title: "会話2", updatedAt: "2026-03-04T09:00:00Z" },
+  { id: "conv-1", title: "会話1", updatedAt: "2026-03-04T10:00:00Z", modelId: "claude-sonnet-4-20250514" },
+  { id: "conv-2", title: "会話2", updatedAt: "2026-03-04T09:00:00Z", modelId: null },
 ];
 
 /** テスト用のメッセージデータ */
@@ -348,6 +348,88 @@ describe("useConversations", () => {
       // タイトルが変更されていないことを確認
       const item = result.current.conversations.find((c) => c.id === "conv-1");
       expect(item?.title).toBe("会話1");
+    });
+  });
+
+  describe("modelId管理", () => {
+    it("会話一覧のレスポンスに modelId が含まれる", async () => {
+      vi.spyOn(globalThis, "fetch").mockImplementation(() =>
+        mockFetchResponse(mockConversations)
+      );
+
+      const { result } = renderHook(() => useConversations());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.conversations[0].modelId).toBe("claude-sonnet-4-20250514");
+      expect(result.current.conversations[1].modelId).toBeNull();
+    });
+
+    it("createConversation に modelId を渡すと POST ボディに含まれる", async () => {
+      const newConv = {
+        id: "conv-new",
+        title: "新しいチャット",
+        modelId: "claude-opus-4-20250514",
+        createdAt: "2026-03-04T11:00:00Z",
+        updatedAt: "2026-03-04T11:00:00Z",
+      };
+
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation((url, options) => {
+        if (url === "/api/conversations" && !(options as RequestInit)?.method) {
+          return mockFetchResponse(mockConversations);
+        }
+        return mockFetchResponse(newConv, 201);
+      });
+
+      const { result } = renderHook(() => useConversations());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      await act(async () => {
+        await result.current.createConversation("claude-opus-4-20250514");
+      });
+
+      // POST リクエストのボディに modelId が含まれること
+      const postCall = fetchSpy.mock.calls.find(
+        (c) => (c[1] as RequestInit)?.method === "POST"
+      );
+      expect(postCall).toBeDefined();
+      const body = JSON.parse((postCall![1] as RequestInit).body as string);
+      expect(body.modelId).toBe("claude-opus-4-20250514");
+    });
+
+    it("selectConversation で会話の modelId を返却する", async () => {
+      const messagesResponse = {
+        modelId: "claude-sonnet-4-20250514",
+        messages: mockMessages,
+      };
+
+      vi.spyOn(globalThis, "fetch").mockImplementation((url) => {
+        if (url === "/api/conversations") {
+          return mockFetchResponse(mockConversations);
+        }
+        if (url === "/api/conversations/conv-1/messages") {
+          return mockFetchResponse(messagesResponse);
+        }
+        return mockFetchResponse({}, 404);
+      });
+
+      const { result } = renderHook(() => useConversations());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      let returnedModelId: string | null = null;
+      await act(async () => {
+        returnedModelId = await result.current.selectConversation("conv-1");
+      });
+
+      expect(returnedModelId).toBe("claude-sonnet-4-20250514");
     });
   });
 
