@@ -6,15 +6,15 @@
  * ストリーミング中は TypingIndicator を表示する。
  */
 import { useRef, useEffect } from "react";
-import type { UIMessage } from "@ai-sdk/react";
 import { MessageBubble } from "./message-bubble";
 import { WelcomeScreen } from "./welcome-screen";
 import { TypingIndicator } from "./typing-indicator";
+import type { ChatUIMessage } from "../hooks/use-chat-session";
 
 /** MessageList のプロパティ */
 interface MessageListProps {
   /** メッセージ一覧 */
-  messages: UIMessage[];
+  messages: ChatUIMessage[];
   /** ストリーミング中かどうか */
   isStreaming: boolean;
   /** コピーコールバック */
@@ -41,12 +41,18 @@ export function MessageList({
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  /** 新しいメッセージ追加時に自動スクロール */
+  /** 最後のメッセージのパーツ数（ツールパーツ追加時のスクロール発火用） */
+  const lastMessagePartsLength =
+    messages.length > 0
+      ? messages[messages.length - 1].parts?.length ?? 0
+      : 0;
+
+  /** 新しいメッセージ追加時、またはパーツ追加時に自動スクロール */
   useEffect(() => {
     if (bottomRef.current && typeof bottomRef.current.scrollIntoView === "function") {
       bottomRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages]);
+  }, [messages, lastMessagePartsLength]);
 
   if (messages.length === 0 && !isStreaming) {
     return (

@@ -10,16 +10,32 @@
 import { useCallback, useMemo } from "react";
 import { useChat, type UIMessage } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
+import { z } from "zod/v4";
 
 /** チャットストリーミングの状態 */
 export type ChatStatus = "submitted" | "streaming" | "ready" | "error";
+
+/** メッセージメタデータのスキーマ（トークン使用量を含む） */
+const messageMetadataSchema = z.object({
+  usage: z.object({
+    inputTokens: z.number(),
+    outputTokens: z.number(),
+    totalTokens: z.number(),
+  }).optional(),
+});
+
+/** メッセージメタデータの型 */
+export type MessageMetadata = z.infer<typeof messageMetadataSchema>;
+
+/** メタデータ付き UIMessage 型 */
+export type ChatUIMessage = UIMessage<MessageMetadata>;
 
 /** useChatSession のパラメータ型 */
 export interface UseChatSessionParams {
   /** 会話ID */
   conversationId: string | null;
   /** DB から取得した初期メッセージ */
-  initialMessages: UIMessage[];
+  initialMessages: ChatUIMessage[];
   /** 使用するモデル ID */
   modelId: string;
 }
@@ -27,7 +43,7 @@ export interface UseChatSessionParams {
 /** useChatSession の戻り値型 */
 export interface UseChatSessionReturn {
   /** メッセージ一覧 */
-  messages: UIMessage[];
+  messages: ChatUIMessage[];
   /** ストリーミング状態 */
   status: ChatStatus;
   /** メッセージ送信 */
@@ -63,12 +79,13 @@ export function useChatSession({
     status,
     sendMessage: chatSendMessage,
     stop: chatStop,
-    reload,
+    regenerate: chatRegenerate,
     error,
-  } = useChat({
+  } = useChat<ChatUIMessage>({
     id: conversationId ?? undefined,
     transport,
-    initialMessages,
+    messages: initialMessages,
+    messageMetadataSchema,
   });
 
   /** メッセージ送信（conversationId が null の場合は送信しない） */
@@ -87,8 +104,8 @@ export function useChatSession({
 
   /** 最後のAIメッセージを再生成 */
   const regenerate = useCallback(() => {
-    reload();
-  }, [reload]);
+    chatRegenerate();
+  }, [chatRegenerate]);
 
   return {
     messages,

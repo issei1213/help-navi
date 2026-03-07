@@ -13,8 +13,8 @@
  * conversationId がない場合は既存の動作を維持し、後方互換性を確保する。
  */
 import { NextResponse } from "next/server";
-import { handleChatStream } from "@mastra/ai-sdk";
-import { createUIMessageStreamResponse } from "ai";
+import { toAISdkStream } from "@mastra/ai-sdk";
+import { createUIMessageStream, createUIMessageStreamResponse } from "ai";
 import { RequestContext } from "@mastra/core/di";
 import { mastra } from "@/mastra";
 import { prisma } from "@/infrastructure/prisma-client";
@@ -197,18 +197,66 @@ export async function POST(req: Request) {
     const requestContext = new RequestContext();
     requestContext.set("modelId", resolvedModelId);
 
-    // handleChatStreamでMastraエージェントのストリーミングを処理
-    const stream = await handleChatStream({
-      mastra,
-      agentId: "chat-agent",
-      params: { ...body, requestContext },
+    // Mastraエージェントを取得しストリーミング呼び出し
+    const agent = mastra.getAgentById("chat-agent");
+    if (!agent) {
+      return NextResponse.json(
+        { error: "エージェントが見つかりません" },
+        { status: 500 }
+      );
+    }
+
+    const result = await agent.stream(body.messages, { requestContext });
+
+    // トークン使用量を追跡するクロージャ
+    let totalInputTokens = 0;
+    let totalOutputTokens = 0;
+
+    // toAISdkStream + messageMetadata でusage情報をfinishイベントに含める
+    const uiStream = createUIMessageStream({
+      originalMessages: body.messages,
+      execute: async ({ writer }) => {
+        for await (const part of toAISdkStream(result, {
+          from: "agent",
+          sendStart: true,
+          sendFinish: true,
+          messageMetadata: ({ part: streamPart }) => {
+            // step-finish イベントからトークン使用量を累積
+            if (
+              streamPart.type === "finish-step" &&
+              "usage" in streamPart &&
+              streamPart.usage
+            ) {
+              const usage = streamPart.usage as {
+                inputTokens?: number;
+                outputTokens?: number;
+              };
+              totalInputTokens += usage.inputTokens ?? 0;
+              totalOutputTokens += usage.outputTokens ?? 0;
+            }
+            // finish イベントで累積したトークン使用量を返す
+            if (streamPart.type === "finish") {
+              return {
+                usage: {
+                  inputTokens: totalInputTokens,
+                  outputTokens: totalOutputTokens,
+                  totalTokens: totalInputTokens + totalOutputTokens,
+                },
+              };
+            }
+            return undefined;
+          },
+        })) {
+          writer.write(part);
+        }
+      },
     });
 
     // SSE形式でストリーミングレスポンスを返却
     // conversationId が指定されている場合、consumeSseStream でストリームのコピーを読み取り、
     // AI応答テキストを収集して完了時にDBに保存する
     return createUIMessageStreamResponse({
-      stream,
+      stream: uiStream,
       ...(conversationId
         ? {
             consumeSseStream: async ({

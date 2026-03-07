@@ -5,15 +5,19 @@
  * ユーザーメッセージは右寄せダーク背景バブル。
  * AIメッセージは左寄せアバター付きで表示する。
  * ホバー時に MessageActions を表示する。
+ * AIメッセージのpartsにツール呼び出しパーツが含まれる場合は
+ * ToolInvocationPartコンポーネントに委譲して表示する。
  */
-import type { UIMessage } from "@ai-sdk/react";
+import { isToolUIPart, isTextUIPart, getToolName } from "ai";
 import { MessageActions } from "./message-actions";
 import { MarkdownRenderer } from "./markdown-renderer";
+import { ToolInvocationPart } from "./tool-invocation-part";
+import type { ChatUIMessage } from "../hooks/use-chat-session";
 
 /** MessageBubble のプロパティ */
 interface MessageBubbleProps {
   /** メッセージデータ */
-  message: UIMessage;
+  message: ChatUIMessage;
   /** ストリーミング中かどうか */
   isStreaming?: boolean;
   /** コピーコールバック */
@@ -22,8 +26,8 @@ interface MessageBubbleProps {
   onRegenerate: () => void;
 }
 
-/** メッセージからテキスト内容を抽出する */
-function extractTextContent(message: UIMessage): string {
+/** メッセージからテキスト内容を抽出する（コピー・アクション用） */
+function extractTextContent(message: ChatUIMessage): string {
   return (
     message.parts
       ?.filter((part) => part.type === "text")
@@ -66,18 +70,58 @@ export function MessageBubble({
           {isUser ? (
             <p className="whitespace-pre-wrap text-sm">{textContent}</p>
           ) : (
-            <MarkdownRenderer content={textContent} isStreaming={isStreaming} />
+            /* AIメッセージ: parts配列を順序通りにイテレートし、
+               テキストとツールパーツを分岐レンダリングする */
+            <div>
+              {message.parts?.map((part, index) => {
+                if (isTextUIPart(part)) {
+                  return (
+                    <MarkdownRenderer
+                      key={`text-${index}`}
+                      content={part.text}
+                      isStreaming={isStreaming}
+                    />
+                  );
+                }
+
+                if (isToolUIPart(part)) {
+                  const toolName = getToolName(part);
+                  return (
+                    <ToolInvocationPart
+                      key={`tool-${part.toolCallId}`}
+                      toolCallId={part.toolCallId}
+                      toolName={toolName}
+                      state={part.state as "input-streaming" | "input-available" | "output-available" | "output-error"}
+                      input={(part.input as Record<string, unknown>) ?? {}}
+                      output={"output" in part ? part.output : undefined}
+                      errorText={"errorText" in part ? (part.errorText as string) : undefined}
+                    />
+                  );
+                }
+
+                // その他のパーツタイプは無視（reasoning, source等）
+                return null;
+              })}
+            </div>
           )}
         </div>
 
-        {/* AIメッセージのアクションボタン */}
+        {/* AIメッセージのアクションボタンとトークン使用量 */}
         {!isUser && (
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity mt-1">
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity mt-1 flex items-center gap-3">
             <MessageActions
               content={textContent}
               onCopy={onCopy}
               onRegenerate={onRegenerate}
             />
+            {message.metadata?.usage && (
+              <span
+                data-testid="token-usage"
+                className="text-xs text-zinc-400 dark:text-zinc-500"
+              >
+                {message.metadata.usage.inputTokens.toLocaleString()} in / {message.metadata.usage.outputTokens.toLocaleString()} out ({message.metadata.usage.totalTokens.toLocaleString()} total)
+              </span>
+            )}
           </div>
         )}
       </div>

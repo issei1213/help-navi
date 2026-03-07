@@ -16,7 +16,7 @@ import { ChatSidebar } from "./chat-sidebar";
 import { ChatHeader } from "./chat-header";
 import { MessageList } from "./message-list";
 import { ChatInputArea } from "./chat-input-area";
-import type { UIMessage } from "@ai-sdk/react";
+import type { ChatUIMessage } from "../hooks/use-chat-session";
 import { DEFAULT_MODEL_ID } from "@/lib/models";
 
 export function ChatContainer() {
@@ -39,8 +39,8 @@ export function ChatContainer() {
   /** サイドバー状態管理フック */
   const { sidebarState, isMobile, toggleSidebar, closeSidebar } = useSidebar();
 
-  /** activeMessages を UIMessage 形式に変換する */
-  const initialMessages: UIMessage[] = activeMessages.map((msg) => ({
+  /** activeMessages を ChatUIMessage 形式に変換する */
+  const initialMessages: ChatUIMessage[] = activeMessages.map((msg) => ({
     id: msg.id,
     role: msg.role as "user" | "assistant",
     parts: [{ type: "text" as const, text: msg.content }],
