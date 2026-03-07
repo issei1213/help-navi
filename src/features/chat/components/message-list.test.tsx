@@ -26,6 +26,25 @@ vi.mock("./markdown-renderer", () => ({
   ),
 }));
 
+/** ToolInvocationPartをモック化 */
+vi.mock("./tool-invocation-part", () => ({
+  ToolInvocationPart: vi.fn(
+    (props: {
+      toolCallId: string;
+      toolName: string;
+      state: string;
+    }) => (
+      <div
+        data-testid={`tool-invocation-${props.toolCallId}`}
+        data-tool-name={props.toolName}
+        data-state={props.state}
+      >
+        ツール: {props.toolName}
+      </div>
+    )
+  ),
+}));
+
 /** テスト用メッセージデータ */
 const mockMessages: UIMessage[] = [
   {
@@ -349,6 +368,181 @@ describe("MessageList isStreaming伝播", () => {
 
     // 最後のメッセージがユーザーの場合（AI応答待ち）、TypingIndicatorが表示される
     expect(screen.getByTestId("typing-indicator")).toBeDefined();
+  });
+});
+
+describe("MessageList 自動スクロール（ツールパーツ対応）", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  it("メッセージのパーツ数が変化した場合にも自動スクロールが発動する", () => {
+    const scrollIntoViewMock = vi.fn();
+    // scrollIntoViewをモック
+    Element.prototype.scrollIntoView = scrollIntoViewMock;
+
+    const initialMessages: UIMessage[] = [
+      {
+        id: "msg-1",
+        role: "user",
+        parts: [{ type: "text", text: "検索して" }],
+      },
+      {
+        id: "msg-2",
+        role: "assistant",
+        parts: [
+          {
+            type: "tool-webSearch",
+            toolCallId: "call-1",
+            toolName: "webSearch",
+            state: "input-streaming",
+            input: { query: "test" },
+          } as unknown as UIMessage["parts"][number],
+        ],
+      },
+    ];
+
+    const { rerender } = render(
+      <MessageList
+        messages={initialMessages}
+        isStreaming={true}
+        onCopy={vi.fn()}
+        onRegenerate={vi.fn()}
+        {...defaultMessageListProps}
+      />
+    );
+
+    // scrollIntoViewの呼び出し回数をリセット
+    const callCountAfterInitial = scrollIntoViewMock.mock.calls.length;
+
+    // パーツが追加されたメッセージで再レンダリング
+    const updatedMessages: UIMessage[] = [
+      ...initialMessages.slice(0, 1),
+      {
+        id: "msg-2",
+        role: "assistant",
+        parts: [
+          {
+            type: "tool-webSearch",
+            toolCallId: "call-1",
+            toolName: "webSearch",
+            state: "output-available",
+            input: { query: "test" },
+            output: { results: [] },
+          } as unknown as UIMessage["parts"][number],
+          { type: "text", text: "結果です。" },
+        ],
+      },
+    ];
+
+    rerender(
+      <MessageList
+        messages={updatedMessages}
+        isStreaming={true}
+        onCopy={vi.fn()}
+        onRegenerate={vi.fn()}
+        {...defaultMessageListProps}
+      />
+    );
+
+    // パーツ数の変化によりscrollIntoViewが再度呼ばれている
+    expect(scrollIntoViewMock.mock.calls.length).toBeGreaterThan(
+      callCountAfterInitial
+    );
+  });
+});
+
+describe("MessageBubble ツールパーツ対応", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  it("AIメッセージにツール呼び出しパーツが含まれる場合、ToolInvocationPartを表示する", () => {
+    const messageWithTool: UIMessage = {
+      id: "msg-tool-1",
+      role: "assistant",
+      parts: [
+        {
+          type: "tool-webSearch",
+          toolCallId: "call-1",
+          toolName: "webSearch",
+          state: "output-available",
+          input: { query: "TypeScript" },
+          output: { results: [] },
+        } as unknown as UIMessage["parts"][number],
+        { type: "text", text: "検索結果です。" },
+      ],
+    };
+
+    render(
+      <MessageBubble
+        message={messageWithTool}
+        onCopy={vi.fn()}
+        onRegenerate={vi.fn()}
+      />
+    );
+
+    // ToolInvocationPartが表示される
+    expect(screen.getByTestId("tool-invocation-call-1")).not.toBeNull();
+    // テキストも表示される
+    expect(screen.getByText("検索結果です。")).not.toBeNull();
+  });
+
+  it("複数のツール呼び出しパーツを含むメッセージを正しい順序で表示する", () => {
+    const messageWithMultipleTools: UIMessage = {
+      id: "msg-tool-2",
+      role: "assistant",
+      parts: [
+        {
+          type: "tool-webSearch",
+          toolCallId: "call-1",
+          toolName: "webSearch",
+          state: "output-available",
+          input: { query: "test1" },
+          output: { results: [] },
+        } as unknown as UIMessage["parts"][number],
+        {
+          type: "tool-s3ListObjects",
+          toolCallId: "call-2",
+          toolName: "s3ListObjects",
+          state: "output-available",
+          input: { prefix: "/" },
+          output: { objects: [] },
+        } as unknown as UIMessage["parts"][number],
+        { type: "text", text: "結果です。" },
+      ],
+    };
+
+    render(
+      <MessageBubble
+        message={messageWithMultipleTools}
+        onCopy={vi.fn()}
+        onRegenerate={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId("tool-invocation-call-1")).not.toBeNull();
+    expect(screen.getByTestId("tool-invocation-call-2")).not.toBeNull();
+    expect(screen.getByText("結果です。")).not.toBeNull();
+  });
+
+  it("ユーザーメッセージではツールパーツは表示されない（テキストのみ）", () => {
+    const userMessage: UIMessage = {
+      id: "msg-user-1",
+      role: "user",
+      parts: [{ type: "text", text: "こんにちは" }],
+    };
+
+    render(
+      <MessageBubble
+        message={userMessage}
+        onCopy={vi.fn()}
+        onRegenerate={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText("こんにちは")).not.toBeNull();
+    expect(screen.queryByTestId("tool-invocation-call-1")).toBeNull();
   });
 });
 
